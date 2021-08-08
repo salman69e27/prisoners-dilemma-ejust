@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Protocol, Iterator
-from config import MOVE, COOP, DEFECT, PAYOFF
+from prisoners_dilemma.config import MOVE, COOP, DEFECT, PAYOFF
 
 
 class DuplicateResultError(Exception):
@@ -30,8 +30,9 @@ class PlayerInterface(Protocol):
     def play(self) -> bool:
         ...
 
-    def set_result(self, result: tuple[int, int],
-            opponents_move: MOVE) -> None:
+    def set_result(
+        self, result: tuple[int, int], opponents_move: MOVE
+    ) -> None:
         ...
 
 
@@ -59,21 +60,23 @@ class Results:
     ) -> None:
 
         # Make sure these players exist
-        if player1 not in self.__players or player2 not in self.__players:
+        if (player1.__class__ not in self.__players) or (
+            player2.__class__ not in self.__players
+        ):
             raise PlayerNotFoundError(
                 "At least one of the two players is not registered"
             )
 
         # Make sure this is the first match between the players
-        if player1 in self.__results[player2]:
+        if player1.__class__ in self.__results[player2.__class__]:
             raise DuplicateResultError(
-                f"""There is a previous result between {player1.id} and
-                 {player2.id}"""
+                f"""There is a previous result between {player1.__class__.id} and
+                 {player2.__class__.id}"""
             )
 
         self.__tournament_started = True  # To prevent adding new players
-        self.__results[player1][player2] = result[0]
-        self.__results[player2][player1] = result[1]
+        self.__results[player1.__class__][player2.__class__] = result[0]
+        self.__results[player2.__class__][player1.__class__] = result[1]
 
     def get_result(
         self, player1: PlayerInterface, player2: PlayerInterface
@@ -124,21 +127,20 @@ class Judge:
         self.players.append(player)
         self.results.add_player(player)
 
-
     def matches(self) -> Iterator[Match]:
         # TODO: Change to generate a fair round-robin schedule
 
         n = len(self.players)
         for i in range(n):
             for j in range(i + 1, n):
-                yield Match(self.players[i], self.players[j], self)
+                yield Match(self.players[i](), self.players[j](), self)
 
     def play(self) -> None:
         for match in self.matches():
             match.play()
             self.__write_results()
 
-    def __write_results(self):
+    def __write_results(self) -> None:
         # TODO: Write the reults so far to a json file to upload on the website
         ...
 
@@ -162,14 +164,14 @@ class Match:
         self.report = {
             "# betrayals": 0,
             "# trusts": 0,
-            f"# trusts by {self.player1.id}": 0,
-            f"# betrayals by {self.player1.id}": 0,
-            f"# trusts by {self.player2.id}": 0,
-            f"# betrayals by {self.player2.id}": 0,
+            f"# trusts by {self.player1.__class__.id}": 0,
+            f"# betrayals by {self.player1.__class__.id}": 0,
+            f"# trusts by {self.player2.__class__.id}": 0,
+            f"# betrayals by {self.player2.__class__.id}": 0,
             "# mutual trusts": 0,
             "# mutual betrayals": 0,
-            f"{self.player1.id} one-sided betrayals": 0,
-            f"{self.player2.id} one-sided betrayals": 0,
+            f"{self.player1.__class__.id} one-sided betrayals": 0,
+            f"{self.player2.__class__.id} one-sided betrayals": 0,
         }
 
     def play(self) -> None:
@@ -189,9 +191,7 @@ class Match:
                     continue
                 self.report[key] += val
 
-        self.judge.results.set_result(
-            self.player1, self.player2, self.result
-        )
+        self.judge.results.set_result(self.player1, self.player2, self.result)
 
         # Update judge report with the new match report
         for key, val in self.report.items():
@@ -199,8 +199,8 @@ class Match:
                 self.judge.report[key] += val
 
         self.judge.report["one-sided trusts"] = (
-            self.report[f"{self.player1.id} one-sided betrayals"]
-            + self.report[f"{self.player2.id} one-sided betrayals"]
+            self.report[f"{self.player1.__class__.id} one-sided betrayals"]
+            + self.report[f"{self.player2.__class__.id} one-sided betrayals"]
         )
 
     @property
@@ -217,15 +217,27 @@ class Match:
             "result": result,
             "# betrayals": (player1_move == COOP) + (player2_move == COOP),
             "# trusts": (player1_move == DEFECT) + (player2_move == DEFECT),
-            f"# trusts by {self.player1.id}": (player1_move == DEFECT),
-            f"# betrayals by {self.player1.id}": (player1_move == COOP),
-            f"# trusts by {self.player2.id}": (player2_move == DEFECT),
-            f"# betrayals by {self.player2.id}": (player2_move == COOP),
+            f"# trusts by {self.player1.__class__.id}": (
+                player1_move == DEFECT
+            ),
+            f"# betrayals by {self.player1.__class__.id}": (
+                player1_move == COOP
+            ),
+            f"# trusts by {self.player2.__class__.id}": (
+                player2_move == DEFECT
+            ),
+            f"# betrayals by {self.player2.__class__.id}": (
+                player2_move == COOP
+            ),
             "# mutual trusts": (player1_move == player2_move == DEFECT),
             "# mutual betrayals": (player1_move == player2_move == COOP),
-            f"{self.player1.id} one-sided betrayals": (player1_move == COOP)
+            f"{self.player1.__class__.id} one-sided betrayals": (
+                player1_move == COOP
+            )
             and (player2_move == DEFECT),
-            f"{self.player2.id} one-sided betrayals": (player2_move == COOP)
+            f"{self.player2.__class__.id} one-sided betrayals": (
+                player2_move == COOP
+            )
             and (player1_move == DEFECT),
         }
         return game_report

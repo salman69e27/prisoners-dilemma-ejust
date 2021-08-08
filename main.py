@@ -1,31 +1,30 @@
 import importlib
-from judge import Judge
+import prisoners_dilemma
 from os import getcwd, listdir
 from os.path import join, isfile
 
-path = join(getcwd(), 'players')
 
-
-def is_numerical(string):
-    try:
-        int(string)
-        return True
-    except ValueError:
-        return False
+path = join(getcwd(), 'bots')
 
 
 if __name__ == '__main__':
-    judge = Judge()
+    judge = prisoners_dilemma.Judge()
+
+    print("prisoners_dilemma: Reading bots files")
+
     for file in listdir(path):
         if not isfile(join(path, file)):
             continue
-        print(file)
+
         file_id, file_ext = file.split('.')
-        if is_numerical(file_id) and (file_ext == 'py'):
-            mod = importlib.import_module('players.'+file_id)
-            player = getattr(mod, 'Player')
-            player.id = file_id
-            judge.add_player(player())
+
+        if (file_ext == 'py') and (file_id not in ["__init__", "base"]):
+            print("prisoners_dilemma: processing", file)
+
+            mod = importlib.import_module('bots.'+file_id)
+            bot = getattr(mod, 'Bot')
+            judge.register_player(bot)
+
     for match in judge.matches():
         match.play()
         print(match.result)
