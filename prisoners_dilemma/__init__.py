@@ -42,15 +42,15 @@ class Results:
     """
 
     def __init__(self) -> None:
-        self.__results: dict[Type[PlayerInterface], dict[Type[PlayerInterface], int]] = dict()
-        self.__players: set[Type[PlayerInterface]] = set()
+        self.results: dict[Type[PlayerInterface], dict[Type[PlayerInterface], int]] = dict()
+        self.players: set[Type[PlayerInterface]] = set()
         self.__tournament_started = False
 
     def add_player(self, player: Type[PlayerInterface]) -> None:
         if self.__tournament_started:
             raise RegisterationError("Tournament already started")
-        self.__results[player] = dict()
-        self.__players.add(player)
+        self.results[player] = dict()
+        self.players.add(player)
 
     def set_result(
         self,
@@ -60,23 +60,23 @@ class Results:
     ) -> None:
 
         # Make sure these players exist
-        if (player1.__class__ not in self.__players) or (
-            player2.__class__ not in self.__players
+        if (player1.__class__ not in self.players) or (
+            player2.__class__ not in self.players
         ):
             raise PlayerNotFoundError(
                 "At least one of the two players is not registered"
             )
 
         # Make sure this is the first match between the players
-        if player1.__class__ in self.__results[player2.__class__]:
+        if player1.__class__ in self.results[player2.__class__]:
             raise DuplicateResultError(
                 f"""There is a previous result between {player1.__class__.id} and
                  {player2.__class__.id}"""
             )
 
         self.__tournament_started = True  # To prevent adding new players
-        self.__results[player1.__class__][player2.__class__] = result[0]
-        self.__results[player2.__class__][player1.__class__] = result[1]
+        self.results[player1.__class__][player2.__class__] = result[0]
+        self.results[player2.__class__][player1.__class__] = result[1]
 
     def get_result(
         self, player1: Type[PlayerInterface], player2: Type[PlayerInterface]
@@ -87,7 +87,7 @@ class Results:
         """
 
         # Make sure these players exist
-        if player1 not in self.__players or player2 not in self.__players:
+        if player1 not in self.players or player2 not in self.players:
             raise PlayerNotFoundError(
                 """At least one of the players is
                                       not registered"""
@@ -95,8 +95,8 @@ class Results:
 
         try:
             return (
-                self.__results[player1][player2],
-                self.__results[player2][player1],
+                self.results[player1][player2],
+                self.results[player2][player1],
             )
         except KeyError:
             raise ResultNotFoundError(
