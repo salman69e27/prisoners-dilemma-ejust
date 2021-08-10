@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Protocol, Iterator
+from typing import Any, Protocol, Iterator, Type
 from prisoners_dilemma.config import MOVE, COOP, DEFECT, PAYOFF
 
 
@@ -42,11 +42,11 @@ class Results:
     """
 
     def __init__(self) -> None:
-        self.__results: dict[Any, dict[Any, int]] = dict()
-        self.__players: set[Any] = set()
+        self.__results: dict[Type[PlayerInterface], dict[Type[PlayerInterface], int]] = dict()
+        self.__players: set[Type[PlayerInterface]] = set()
         self.__tournament_started = False
 
-    def add_player(self, player: PlayerInterface) -> None:
+    def add_player(self, player: Type[PlayerInterface]) -> None:
         if self.__tournament_started:
             raise RegisterationError("Tournament already started")
         self.__results[player] = dict()
@@ -79,7 +79,7 @@ class Results:
         self.__results[player2.__class__][player1.__class__] = result[1]
 
     def get_result(
-        self, player1: PlayerInterface, player2: PlayerInterface
+        self, player1: Type[PlayerInterface], player2: Type[PlayerInterface]
     ) -> tuple[int, int]:
 
         """
